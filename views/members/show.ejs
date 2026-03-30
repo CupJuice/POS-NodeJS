@@ -1,0 +1,84 @@
+<%- include('../partials/header') %>
+<div class="container py-4">
+  <%- include('../partials/flash') %>
+  <div class="d-flex align-items-center mb-4">
+    <a href="/members" class="btn btn-outline-secondary me-3"><i class="fas fa-arrow-left"></i></a>
+    <h2 class="fw-bold text-primary mb-0"><i class="fas fa-user me-2"></i>ข้อมูลสมาชิก</h2>
+  </div>
+  <div class="row g-4">
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm text-center">
+        <div class="card-body py-4">
+          <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto mb-3"
+               style="width:80px;height:80px;font-size:2rem">
+            <%= member.firstName.charAt(0).toUpperCase() %>
+          </div>
+          <h4 class="fw-bold"><%= member.firstName %> <%= member.lastName %></h4>
+          <p class="text-muted mb-2"><%= member.memberId %></p>
+          <span class="badge fs-6
+            <%= member.level === 'Platinum' ? 'bg-dark' :
+               member.level === 'Gold' ? 'bg-warning text-dark' :
+               member.level === 'Silver' ? 'bg-secondary' : 'bg-danger' %>">
+            <%= member.level %>
+          </span>
+          <hr>
+          <div class="row g-2 text-center">
+            <div class="col-6">
+              <p class="mb-0 fw-bold text-warning fs-4"><%= member.points.toLocaleString() %></p>
+              <small class="text-muted">แต้มสะสม</small>
+            </div>
+            <div class="col-6">
+              <p class="mb-0 fw-bold text-success fs-6">฿<%= member.totalSpent.toLocaleString('th-TH', {minimumFractionDigits:2}) %></p>
+              <small class="text-muted">ยอดใช้จ่ายรวม</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-8">
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white">
+          <h6 class="fw-bold mb-0"><i class="fas fa-info-circle me-2 text-primary"></i>ข้อมูลส่วนตัว</h6>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-6"><label class="text-muted small">เบอร์โทร</label><p class="fw-semibold"><%= member.phone %></p></div>
+            <div class="col-md-6"><label class="text-muted small">อีเมล</label><p class="fw-semibold"><%= member.email || '-' %></p></div>
+            <div class="col-md-6"><label class="text-muted small">วันเกิด</label><p class="fw-semibold"><%= member.birthDate ? new Date(member.birthDate).toLocaleDateString('th-TH') : '-' %></p></div>
+            <div class="col-md-6"><label class="text-muted small">วันสมัคร</label><p class="fw-semibold"><%= new Date(member.joinDate).toLocaleDateString('th-TH') %></p></div>
+            <div class="col-12"><label class="text-muted small">ที่อยู่</label><p class="fw-semibold"><%= member.address || '-' %></p></div>
+          </div>
+        </div>
+      </div>
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white">
+          <h6 class="fw-bold mb-0"><i class="fas fa-history me-2 text-info"></i>ประวัติการซื้อล่าสุด</h6>
+        </div>
+        <div class="table-responsive">
+          <table class="table mb-0">
+            <thead class="table-light">
+              <tr><th>เลขที่</th><th>วันที่</th><th>ยอดรวม</th><th>แต้ม</th></tr>
+            </thead>
+            <tbody>
+              <% purchaseHistory.forEach(s => { %>
+                <tr>
+                  <td><a href="/sales/<%= s._id %>"><code><%= s.saleNumber %></code></a></td>
+                  <td><%= new Date(s.saleDate).toLocaleDateString('th-TH') %></td>
+                  <td class="text-success fw-bold">฿<%= s.totalAmount.toLocaleString('th-TH', {minimumFractionDigits:2}) %></td>
+                  <td>+<%= s.pointsEarned %></td>
+                </tr>
+              <% }) %>
+              <% if (!purchaseHistory.length) { %>
+                <tr><td colspan="4" class="text-center text-muted py-3">ยังไม่มีประวัติการซื้อ</td></tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="text-end mt-3">
+        <a href="/members/<%= member._id %>/edit" class="btn btn-warning"><i class="fas fa-edit me-2"></i>แก้ไข</a>
+      </div>
+    </div>
+  </div>
+</div>
+<%- include('../partials/footer') %>

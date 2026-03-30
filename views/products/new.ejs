@@ -1,0 +1,84 @@
+<%- include('../partials/header') %>
+<div class="container py-4" style="max-width:750px">
+  <%- include('../partials/flash') %>
+  <div class="d-flex align-items-center mb-4">
+    <a href="/products" class="btn btn-outline-secondary me-3"><i class="fas fa-arrow-left"></i></a>
+    <h2 class="fw-bold text-warning mb-0"><i class="fas fa-box-open me-2"></i>เพิ่มสินค้าใหม่</h2>
+  </div>
+  <div class="card border-0 shadow-sm">
+    <div class="card-body p-4">
+      <form action="/products" method="POST" enctype="multipart/form-data">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">ชื่อสินค้า *</label>
+            <input type="text" name="name" class="form-control" required value="<%= product.name || '' %>">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">หมวดหมู่ *</label>
+            <input type="text" name="category" class="form-control" required list="categoryList" value="<%= product.category || '' %>">
+            <datalist id="categoryList">
+              <% categories.forEach(c => { %><option value="<%= c %>"><% }) %>
+            </datalist>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">หน่วย</label>
+            <input type="text" name="unit" class="form-control" value="<%= product.unit || 'ชิ้น' %>">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">ราคาทุน (บาท) *</label>
+            <input type="number" name="costPrice" class="form-control" required min="0" step="0.01" value="<%= product.costPrice || '' %>">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">ราคาขาย (บาท) *</label>
+            <input type="number" name="sellPrice" class="form-control" required min="0" step="0.01" value="<%= product.sellPrice || '' %>">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">จำนวนในสต็อก</label>
+            <input type="number" name="stock" class="form-control" min="0" value="<%= product.stock || 0 %>">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">สต็อกขั้นต่ำ (แจ้งเตือน)</label>
+            <input type="number" name="minStock" class="form-control" min="0" value="<%= product.minStock || 5 %>">
+          </div>
+
+          
+          <div class="col-12">
+            <label class="form-label fw-semibold">รูปสินค้า</label>
+            <input type="file" name="image" class="form-control" accept="image/*" onchange="previewImage(this)">
+            <small class="text-muted">ไฟล์ JPG, PNG, GIF, WEBP ขนาดไม่เกิน 2MB</small>
+            <div id="imagePreview" class="mt-2 d-none">
+              <img id="previewImg" src="" style="height:100px;object-fit:cover;border-radius:8px;border:1px solid #dee2e6">
+            </div>
+          </div>
+
+          <div class="col-12">
+            <label class="form-label fw-semibold">รายละเอียด</label>
+            <textarea name="description" class="form-control" rows="2"><%= product.description || '' %></textarea>
+          </div>
+          <div class="col-12 text-end">
+            <a href="/products" class="btn btn-outline-secondary me-2">ยกเลิก</a>
+            <button type="submit" class="btn btn-warning px-4"><i class="fas fa-save me-2"></i>บันทึกสินค้า</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ preview รูปก่อนอัพโหลด -->
+<script>
+  function previewImage(input) {
+    const preview = document.getElementById('imagePreview');
+    const img = document.getElementById('previewImg');
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        img.src = e.target.result;
+        preview.classList.remove('d-none');
+      };
+      reader.readAsDataURL(input.files[0]);
+    }
+  }
+</script>
+
+<%- include('../partials/footer') %>

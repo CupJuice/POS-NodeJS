@@ -1,0 +1,92 @@
+<%- include('../partials/header') %>
+<div class="container py-4" style="max-width:700px">
+  <%- include('../partials/flash') %>
+  <div class="d-flex align-items-center mb-4">
+    <a href="/employees" class="btn btn-outline-secondary me-3"><i class="fas fa-arrow-left"></i></a>
+    <h2 class="fw-bold text-warning mb-0"><i class="fas fa-user-edit me-2"></i>แก้ไขข้อมูลพนักงาน</h2>
+  </div>
+  <div class="card border-0 shadow-sm">
+    <div class="card-body p-4">
+      <form action="/employees/<%= employee._id %>?_method=PUT" method="POST">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">ชื่อ *</label>
+            <input type="text" name="firstName" class="form-control" required value="<%= employee.firstName %>">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">นามสกุล *</label>
+            <input type="text" name="lastName" class="form-control" required value="<%= employee.lastName %>">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">เบอร์โทร *</label>
+            <input type="tel" name="phone" class="form-control" required value="<%= employee.phone %>">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">อีเมล</label>
+            <input type="email" name="email" class="form-control" value="<%= employee.email || '' %>">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">ตำแหน่ง *</label>
+            <select name="position" class="form-select" required>
+              <% ['แคชเชียร์','ผู้จัดการ','พนักงานขาย','ผู้ดูแลระบบ'].forEach(p => { %>
+                <option value="<%= p %>" <%= employee.position === p ? 'selected' : '' %>><%= p %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">เงินเดือน *</label>
+            <input type="number" name="salary" class="form-control" required value="<%= employee.salary %>">
+          </div>
+
+          <!-- รหัสผ่านใหม่ -->
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">รหัสผ่านใหม่</label>
+            <div class="input-group">
+              <input type="password" name="pin" id="editPassword" class="form-control"
+                placeholder="เว้นว่างถ้าไม่เปลี่ยน" minlength="6">
+              <button type="button" class="btn btn-outline-secondary" onclick="toggleEditPass()">
+                <i class="fas fa-eye" id="editEyeIcon"></i>
+              </button>
+            </div>
+            <small class="text-muted">อย่างน้อย 6 ตัวอักษร หากไม่เปลี่ยนให้เว้นว่างไว้</small>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">สถานะ</label>
+            <select name="status" class="form-select"
+              <%= (currentUser && currentUser._id.toString() === employee._id.toString()) ? 'disabled' : '' %>>
+              <option value="true" <%= employee.status ? 'selected' : '' %>>ใช้งาน</option>
+              <option value="false" <%= !employee.status ? 'selected' : '' %>>พักงาน</option>
+            </select>
+            <% if (currentUser && currentUser._id.toString() === employee._id.toString()) { %>
+              <small class="text-danger"><i class="fas fa-lock me-1"></i>ไม่สามารถเปลี่ยนสถานะตัวเองได้</small>
+            <% } %>
+          </div>
+
+          <div class="col-12 text-end">
+            <a href="/employees" class="btn btn-outline-secondary me-2">ยกเลิก</a>
+            <button type="submit" class="btn btn-warning px-4">
+              <i class="fas fa-save me-2"></i>บันทึก
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  function toggleEditPass() {
+    const input = document.getElementById('editPassword');
+    const icon  = document.getElementById('editEyeIcon');
+    if (input.type === 'password') {
+      input.type = 'text';
+      icon.className = 'fas fa-eye-slash';
+    } else {
+      input.type = 'password';
+      icon.className = 'fas fa-eye';
+    }
+  }
+</script>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,107 @@
+<%- include('../partials/header') %>
+<div class="container py-4" style="max-width:800px">
+  <%- include('../partials/flash') %>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex align-items-center">
+      <a href="/sales" class="btn btn-outline-secondary me-3"><i class="fas fa-arrow-left"></i></a>
+      <h2 class="fw-bold mb-0">ใบเสร็จ: <code><%= sale.saleNumber %></code></h2>
+    </div>
+    <button onclick="window.print()" class="btn btn-outline-secondary">
+      <i class="fas fa-print me-2"></i>พิมพ์
+    </button>
+  </div>
+
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+      <h6 class="fw-bold mb-0"><i class="fas fa-info-circle me-2 text-primary"></i>ข้อมูลการขาย</h6>
+      <span class="badge fs-6 bg-<%=
+        sale.status === 'completed' ? 'success' :
+        sale.status === 'cancelled' ? 'danger' :
+        sale.status === 'refunded' ? 'secondary' : 'warning' %>">
+        <%= sale.status === 'completed' ? 'สำเร็จ' :
+            sale.status === 'cancelled' ? 'ยกเลิก' :
+            sale.status === 'refunded' ? 'คืนเงิน' : 'รอชำระ' %>
+      </span>
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-4"><label class="text-muted small">เลขที่</label><p class="fw-bold"><%= sale.saleNumber %></p></div>
+        <div class="col-md-4"><label class="text-muted small">วันที่/เวลา</label><p class="fw-semibold"><%= new Date(sale.saleDate).toLocaleString('th-TH') %></p></div>
+        <div class="col-md-4"><label class="text-muted small">พนักงาน</label><p class="fw-semibold"><%= sale.employee ? sale.employee.firstName + ' ' + sale.employee.lastName : '-' %></p></div>
+        <div class="col-md-4">
+          <label class="text-muted small">สมาชิก</label>
+          <p class="fw-semibold">
+            <% if (sale.member) { %>
+              <a href="/members/<%= sale.member._id %>"><%= sale.member.firstName %> (<%= sale.member.memberId %>)</a>
+            <% } else { %>ลูกค้าทั่วไป<% } %>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white">
+      <h6 class="fw-bold mb-0"><i class="fas fa-list me-2 text-warning"></i>รายการสินค้า</h6>
+    </div>
+    <div class="table-responsive">
+      <table class="table mb-0">
+        <thead class="table-light">
+          <tr><th>สินค้า</th><th class="text-end">ราคา/ชิ้น</th><th class="text-end">จำนวน</th><th class="text-end">รวม</th></tr>
+        </thead>
+        <tbody>
+          <% sale.items.forEach(item => { %>
+            <tr>
+              <td>
+                <span class="fw-semibold"><%= item.productName %></span><br>
+                <small class="text-muted"><%= item.productId %></small>
+              </td>
+              <td class="text-end">฿<%= item.unitPrice.toLocaleString() %></td>
+              <td class="text-end"><%= item.quantity %></td>
+              <td class="text-end fw-bold">฿<%= item.subtotal.toLocaleString('th-TH', {minimumFractionDigits:2}) %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+        <tfoot class="table-light">
+          <tr><td colspan="3" class="text-end">ยอดรวม</td><td class="text-end">฿<%= sale.subtotal.toLocaleString('th-TH', {minimumFractionDigits:2}) %></td></tr>
+          <tr><td colspan="3" class="text-end text-danger">ส่วนลด</td><td class="text-end text-danger">-฿<%= sale.discountAmount.toLocaleString('th-TH', {minimumFractionDigits:2}) %></td></tr>
+          <tr><td colspan="3" class="text-end">ภาษี (<%= sale.taxRate %>%)</td><td class="text-end">฿<%= sale.taxAmount.toLocaleString('th-TH', {minimumFractionDigits:2}) %></td></tr>
+          <tr class="fw-bold fs-5"><td colspan="3" class="text-end">ยอดสุทธิ</td><td class="text-end text-primary">฿<%= sale.totalAmount.toLocaleString('th-TH', {minimumFractionDigits:2}) %></td></tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <% if (payment) { %>
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white">
+        <h6 class="fw-bold mb-0"><i class="fas fa-credit-card me-2 text-success"></i>ข้อมูลการชำระเงิน</h6>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-4"><label class="text-muted small">เลขที่ชำระ</label><p class="fw-bold"><%= payment.paymentNumber %></p></div>
+          <% payment.paymentMethods.forEach(pm => { %>
+            <div class="col-md-4">
+              <label class="text-muted small">วิธีชำระ</label>
+              <p class="fw-semibold">
+                <%= {cash:'เงินสด', credit_card:'บัตรเครดิต', debit_card:'บัตรเดบิต', qr_promptpay:'QR พร้อมเพย์'}[pm.method] %>
+                - ฿<%= pm.amount.toLocaleString() %>
+              </p>
+            </div>
+          <% }) %>
+          <% if (payment.cashReceived > 0) { %>
+            <div class="col-md-4">
+              <label class="text-muted small">รับเงินมา</label>
+              <p class="fw-semibold">฿<%= payment.cashReceived.toLocaleString() %></p>
+            </div>
+          <% } %>
+          <div class="col-md-4">
+            <label class="text-muted small">เงินทอน</label>
+            <p class="fw-bold text-success">฿<%= (payment.changeAmount || 0).toLocaleString() %></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% } %>
+</div>
+<%- include('../partials/footer') %>

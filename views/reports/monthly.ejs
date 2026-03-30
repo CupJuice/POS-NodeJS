@@ -1,0 +1,119 @@
+<%- include('../partials/header') %>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<div class="container-fluid py-4">
+  <div class="d-flex align-items-center mb-4">
+    <a href="/reports" class="btn btn-outline-secondary me-3"><i class="fas fa-arrow-left"></i></a>
+    <h2 class="fw-bold text-success mb-0"><i class="fas fa-calendar-alt me-2"></i>รายงานยอดขายรายเดือน</h2>
+  </div>
+
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <form method="GET" action="/reports/monthly" class="row g-3">
+        <div class="col-md-2">
+          <select name="month" class="form-select">
+            <% ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'].forEach((m, i) => { %>
+              <option value="<%= i+1 %>" <%= month === i+1 ? 'selected' : '' %>><%= m %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <input type="number" name="year" class="form-control" value="<%= year %>" min="2020" max="2030">
+        </div>
+        <div class="col-auto">
+          <button type="submit" class="btn btn-success">ดูรายงาน</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm bg-success text-white">
+        <div class="card-body text-center">
+          <p class="mb-1 opacity-75">ยอดขายรวม</p>
+          <h3 class="fw-bold">฿<%= totalRevenue.toLocaleString('th-TH', {minimumFractionDigits:2}) %></h3>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm bg-primary text-white">
+        <div class="card-body text-center">
+          <p class="mb-1 opacity-75">จำนวนออเดอร์</p>
+          <h3 class="fw-bold"><%= totalOrders %> รายการ</h3>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm bg-info text-white">
+        <div class="card-body text-center">
+          <p class="mb-1 opacity-75">เฉลี่ย/บิล</p>
+          <h3 class="fw-bold">
+            ฿<%= totalOrders > 0 ? (totalRevenue/totalOrders).toLocaleString('th-TH', {minimumFractionDigits:2}) : '0.00' %>
+          </h3>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white">
+          <h6 class="fw-bold mb-0">ยอดขายรายวัน</h6>
+        </div>
+        <div class="card-body">
+          <canvas id="dailyChart" height="100"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white">
+          <h6 class="fw-bold mb-0">สินค้าขายดี Top 10</h6>
+        </div>
+        <div class="card-body p-0">
+          <% topProducts.slice(0,10).forEach((p, i) => { %>
+            <div class="d-flex align-items-center p-2 border-bottom">
+              <span class="badge bg-primary me-2"><%= i+1 %></span>
+              <div class="flex-grow-1">
+                <div class="fw-semibold small"><%= p._id %></div>
+                <small class="text-muted"><%= p.totalQty %> ชิ้น</small>
+              </div>
+              <span class="text-success fw-bold small">฿<%= p.totalRevenue.toLocaleString() %></span>
+            </div>
+          <% }) %>
+          <% if (!topProducts.length) { %>
+            <p class="text-center text-muted py-3 mb-0">ไม่มีข้อมูล</p>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const dailySalesData = <%- dailySales %>;
+const labels = dailySalesData.map(d => `วันที่ ${d._id}`);
+const data = dailySalesData.map(d => d.total);
+new Chart(document.getElementById('dailyChart'), {
+  type: 'line',
+  data: {
+    labels,
+    datasets: [{
+      label: 'ยอดขาย (บาท)',
+      data,
+      borderColor: '#198754',
+      backgroundColor: 'rgba(25,135,84,0.1)',
+      fill: true,
+      tension: 0.4,
+      pointRadius: 4
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: { y: { beginAtZero: true, ticks: { callback: v => '฿' + v.toLocaleString() } } }
+  }
+});
+</script>
+<%- include('../partials/footer') %>

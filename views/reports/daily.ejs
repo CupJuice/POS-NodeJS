@@ -1,0 +1,137 @@
+<%- include('../partials/header') %>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<div class="container-fluid py-4">
+  <div class="d-flex align-items-center mb-4">
+    <a href="/reports" class="btn btn-outline-secondary me-3"><i class="fas fa-arrow-left"></i></a>
+    <h2 class="fw-bold text-primary mb-0"><i class="fas fa-calendar-day me-2"></i>รายงานยอดขายรายวัน</h2>
+  </div>
+
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <form method="GET" action="/reports/daily" class="row g-3">
+        <div class="col-md-3">
+          <input type="date" name="date" class="form-control" value="<%= date %>">
+        </div>
+        <div class="col-auto">
+          <button type="submit" class="btn btn-primary">ดูรายงาน</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm bg-primary text-white">
+        <div class="card-body text-center">
+          <p class="mb-1 opacity-75">รายการขาย</p>
+          <h3 class="fw-bold"><%= summary.totalSales %></h3>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm bg-success text-white">
+        <div class="card-body text-center">
+          <p class="mb-1 opacity-75">ยอดขายรวม</p>
+          <h3 class="fw-bold">฿<%= summary.totalRevenue.toLocaleString('th-TH', {minimumFractionDigits:2}) %></h3>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm bg-warning text-dark">
+        <div class="card-body text-center">
+          <p class="mb-1 opacity-75">ส่วนลดรวม</p>
+          <h3 class="fw-bold">฿<%= summary.totalDiscount.toLocaleString('th-TH', {minimumFractionDigits:2}) %></h3>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm bg-info text-white">
+        <div class="card-body text-center">
+          <p class="mb-1 opacity-75">ภาษีรวม</p>
+          <h3 class="fw-bold">฿<%= summary.totalTax.toLocaleString('th-TH', {minimumFractionDigits:2}) %></h3>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-lg-8">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white">
+          <h6 class="fw-bold mb-0">ยอดขายแยกตามชั่วโมง</h6>
+        </div>
+        <div class="card-body">
+          <canvas id="hourChart" height="80"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-white">
+          <h6 class="fw-bold mb-0">สรุปรายวัน</h6>
+        </div>
+        <div class="card-body">
+          <% if (summary.totalSales > 0) { %>
+            <p class="text-muted small">ยอดขายเฉลี่ย/บิล</p>
+            <p class="fw-bold text-primary fs-5">
+              ฿<%= (summary.totalRevenue / summary.totalSales).toLocaleString('th-TH', {minimumFractionDigits:2}) %>
+            </p>
+          <% } else { %>
+            <p class="text-center text-muted py-4">ไม่มีข้อมูลในวันที่เลือก</p>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-header bg-white">
+      <h6 class="fw-bold mb-0">รายการขายทั้งหมด</h6>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr><th>เลขที่</th><th>เวลา</th><th>พนักงาน</th><th>รายการ</th><th>ส่วนลด</th><th>ยอดสุทธิ</th></tr>
+        </thead>
+        <tbody>
+          <% sales.forEach(s => { %>
+            <tr>
+              <td><a href="/sales/<%= s._id %>"><code><%= s.saleNumber %></code></a></td>
+              <td><%= new Date(s.saleDate).toLocaleTimeString('th-TH') %></td>
+              <td><%= s.employee ? s.employee.firstName : '-' %></td>
+              <td><%= s.items.length %> รายการ</td>
+              <td class="text-danger">-฿<%= s.discountAmount.toLocaleString() %></td>
+              <td class="fw-bold text-success">฿<%= s.totalAmount.toLocaleString('th-TH', {minimumFractionDigits:2}) %></td>
+            </tr>
+          <% }) %>
+          <% if (!sales.length) { %>
+            <tr><td colspan="6" class="text-center text-muted py-3">ไม่มีรายการขายในวันที่เลือก</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const byHour = <%- byHour %>;
+const labels = Array.from({length:24}, (_, i) => `${String(i).padStart(2,'0')}:00`);
+new Chart(document.getElementById('hourChart'), {
+  type: 'bar',
+  data: {
+    labels,
+    datasets: [{
+      label: 'ยอดขาย (บาท)',
+      data: byHour,
+      backgroundColor: 'rgba(13,110,253,0.7)',
+      borderRadius: 4
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false } },
+    scales: { y: { beginAtZero: true, ticks: { callback: v => '฿' + v.toLocaleString() } } }
+  }
+});
+</script>
+<%- include('../partials/footer') %>

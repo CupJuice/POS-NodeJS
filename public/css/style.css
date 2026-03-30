@@ -1,0 +1,57 @@
+/* POS System Custom Styles */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f8f9fa;
+}
+
+/* Card hover effect */
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.12) !important;
+  transition: all 0.3s ease;
+}
+
+/* Navbar */
+.navbar-brand {
+  font-size: 1.3rem;
+}
+
+/* Table */
+.table th {
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+/* Badges */
+.badge {
+  font-weight: 500;
+}
+
+/* Forms */
+.form-label {
+  font-size: 0.9rem;
+  color: #495057;
+}
+
+/* POS-specific */
+.pos-screen .card {
+  border-radius: 0 !important;
+}
+
+/* Print styles */
+@media print {
+  .navbar, .btn, form, footer, .card-footer, nav { display: none !important; }
+  .card { box-shadow: none !important; border: 1px solid #dee2e6 !important; }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #f1f1f1; }
+::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #888; }
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .pos-screen { height: auto; overflow: visible; }
+  #productList, #cartItems { height: auto; max-height: 400px; }
+}

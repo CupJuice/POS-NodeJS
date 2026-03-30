@@ -1,0 +1,52 @@
+<%- include('../partials/header') %>
+<div class="container py-4" style="max-width:700px">
+  <%- include('../partials/flash') %>
+  <div class="d-flex align-items-center mb-4">
+    <a href="/members" class="btn btn-outline-secondary me-3"><i class="fas fa-arrow-left"></i></a>
+    <h2 class="fw-bold text-warning mb-0"><i class="fas fa-user-edit me-2"></i>แก้ไขข้อมูลสมาชิก</h2>
+  </div>
+  <div class="card border-0 shadow-sm">
+    <div class="card-body p-4">
+      <form action="/members/<%= member._id %>?_method=PUT" method="POST">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">ชื่อ *</label>
+            <input type="text" name="firstName" class="form-control" required value="<%= member.firstName %>">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">นามสกุล *</label>
+            <input type="text" name="lastName" class="form-control" required value="<%= member.lastName %>">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">เบอร์โทร *</label>
+            <input type="tel" name="phone" class="form-control" required value="<%= member.phone %>">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">อีเมล</label>
+            <input type="email" name="email" class="form-control" value="<%= member.email || '' %>">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">วันเกิด</label>
+            <input type="date" name="birthDate" class="form-control" value="<%= member.birthDate ? new Date(member.birthDate).toISOString().slice(0,10) : '' %>">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">สถานะ</label>
+            <select name="status" class="form-select">
+              <option value="true" <%= member.status ? 'selected' : '' %>>ใช้งาน</option>
+              <option value="false" <%= !member.status ? 'selected' : '' %>>ระงับ</option>
+            </select>
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-semibold">ที่อยู่</label>
+            <textarea name="address" class="form-control" rows="2"><%= member.address || '' %></textarea>
+          </div>
+          <div class="col-12 text-end">
+            <a href="/members" class="btn btn-outline-secondary me-2">ยกเลิก</a>
+            <button type="submit" class="btn btn-warning px-4"><i class="fas fa-save me-2"></i>บันทึกการแก้ไข</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<%- include('../partials/footer') %>

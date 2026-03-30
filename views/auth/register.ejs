@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>สมัครบัญชีพนักงาน - POS System</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #0d6efd 0%, #0dcaf0 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 0;
+    }
+    .register-card {
+      width: 100%;
+      max-width: 500px;
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .step-indicator {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .step {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 0.85rem;
+    }
+    .step.active { background: #0d6efd; color: white; }
+    .step.done { background: #198754; color: white; }
+    .step.inactive { background: #dee2e6; color: #6c757d; }
+    .form-control:focus {
+      border-color: #0d6efd;
+      box-shadow: 0 0 0 0.2rem rgba(13,110,253,0.15);
+    }
+  </style>
+</head>
+<body>
+  <div class="register-card card border-0 shadow-lg">
+    <div class="card-header bg-primary text-white text-center py-4">
+      <i class="fas fa-user-plus fa-2x mb-2 d-block"></i>
+      <h4 class="fw-bold mb-0">สมัครบัญชีพนักงาน</h4>
+      <p class="mb-0 opacity-75 small">POS System</p>
+    </div>
+    <div class="card-body p-4">
+
+      <% if (error_msg && error_msg.length > 0) { %>
+        <div class="alert alert-danger py-2">
+          <i class="fas fa-exclamation-circle me-2"></i><%= error_msg %>
+        </div>
+      <% } %>
+
+      <!-- Step Indicator -->
+      <div class="step-indicator">
+        <div class="step active" id="step1-dot">1</div>
+        <div class="text-muted d-flex align-items-center">──</div>
+        <div class="step inactive" id="step2-dot">2</div>
+        <div class="text-muted d-flex align-items-center">──</div>
+        <div class="step inactive" id="step3-dot">3</div>
+      </div>
+
+      <form action="/auth/register" method="POST" id="registerForm">
+
+        <!-- Step 1: ข้อมูลส่วนตัว -->
+        <div id="step1">
+          <h6 class="fw-bold text-primary mb-3"><i class="fas fa-user me-2"></i>ข้อมูลส่วนตัว</h6>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">ชื่อ <span class="text-danger">*</span></label>
+              <input type="text" name="firstName" id="firstName" class="form-control" placeholder="ชื่อจริง">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">นามสกุล <span class="text-danger">*</span></label>
+              <input type="text" name="lastName" id="lastName" class="form-control" placeholder="นามสกุล">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">เบอร์โทร <span class="text-danger">*</span></label>
+              <input type="tel" name="phone" id="phone" class="form-control" placeholder="0812345678">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">อีเมล <span class="text-danger">*</span></label>
+              <input type="email" name="email" id="email" class="form-control" placeholder="email@example.com">
+            </div>
+          </div>
+          <div class="text-end mt-4">
+            <button type="button" class="btn btn-primary px-4" onclick="goStep(2)">
+              ถัดไป <i class="fas fa-arrow-right ms-2"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 2: ตำแหน่งงาน -->
+        <div id="step2" class="d-none">
+          <h6 class="fw-bold text-primary mb-3"><i class="fas fa-briefcase me-2"></i>ตำแหน่งงาน</h6>
+          <div class="row g-2">
+            <% ['แคชเชียร์','ผู้จัดการ','พนักงานขาย','ผู้ดูแลระบบ'].forEach(p => { %>
+              <div class="col-6">
+                <input type="radio" class="btn-check" name="position" id="pos_<%= p %>" value="<%= p %>">
+                <label class="btn btn-outline-primary w-100" for="pos_<%= p %>">
+                  <i class="fas fa-<%=
+                    p === 'แคชเชียร์' ? 'cash-register' :
+                    p === 'ผู้จัดการ' ? 'user-tie' :
+                    p === 'พนักงานขาย' ? 'tags' :
+                    p === 'ผู้ดูแลระบบ' ? 'warehouse' : 'shield-alt'
+                  %> me-2"></i><%= p %>
+                </label>
+              </div>
+            <% }) %>
+          </div>
+          <div class="d-flex justify-content-between mt-4">
+            <button type="button" class="btn btn-outline-secondary px-4" onclick="goStep(1)">
+              <i class="fas fa-arrow-left me-2"></i>ย้อนกลับ
+            </button>
+            <button type="button" class="btn btn-primary px-4" onclick="goStep(3)">
+              ถัดไป <i class="fas fa-arrow-right ms-2"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 3: ตั้งรหัสผ่าน -->
+        <div id="step3" class="d-none">
+          <h6 class="fw-bold text-primary mb-3"><i class="fas fa-lock me-2"></i>ตั้งรหัสผ่าน</h6>
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label fw-semibold">รหัสผ่าน <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="fas fa-lock text-muted"></i></span>
+                <input type="password" name="password" id="regPassword"
+                  class="form-control" placeholder="อย่างน้อย 6 ตัวอักษร"
+                  oninput="checkPasswordMatch()">
+                <button type="button" class="btn btn-outline-secondary" onclick="toggleReg('regPassword','eyeReg1')">
+                  <i class="fas fa-eye" id="eyeReg1"></i>
+                </button>
+              </div>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">ยืนยันรหัสผ่าน <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="fas fa-lock text-muted"></i></span>
+                <input type="password" name="confirmPassword" id="regConfirmPassword"
+                  class="form-control" placeholder="กรอกรหัสผ่านอีกครั้ง"
+                  oninput="checkPasswordMatch()">
+                <button type="button" class="btn btn-outline-secondary" onclick="toggleReg('regConfirmPassword','eyeReg2')">
+                  <i class="fas fa-eye" id="eyeReg2"></i>
+                </button>
+              </div>
+              <div id="passwordMatchStatus" class="mt-2 small d-none"></div>
+            </div>
+          </div>
+          <div class="d-flex justify-content-between mt-4">
+            <button type="button" class="btn btn-outline-secondary px-4" onclick="goStep(2)">
+              <i class="fas fa-arrow-left me-2"></i>ย้อนกลับ
+            </button>
+            <button type="submit" class="btn btn-success px-4" id="submitBtn" disabled>
+              <i class="fas fa-user-plus me-2"></i>สมัครสมาชิก
+            </button>
+          </div>
+        </div>
+
+      </form>
+
+      <hr>
+      <p class="text-center text-muted mb-0 small">
+        มีบัญชีแล้ว?
+        <a href="/auth/login" class="text-primary fw-semibold">เข้าสู่ระบบ</a>
+      </p>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+  <script>
+    function goStep(step) {
+      if (step === 2) {
+        const firstName = document.getElementById('firstName').value.trim();
+        const lastName  = document.getElementById('lastName').value.trim();
+        const phone     = document.getElementById('phone').value.trim();
+        const email     = document.getElementById('email').value.trim();
+        if (!firstName || !lastName || !phone || !email) {
+          alert('กรุณากรอกข้อมูลให้ครบถ้วน'); return;
+        }
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          alert('กรุณากรอกอีเมลให้ถูกต้อง'); return;
+        }
+      }
+      if (step === 3) {
+        const position = document.querySelector('input[name="position"]:checked');
+        if (!position) { alert('กรุณาเลือกตำแหน่งงาน'); return; }
+      }
+
+      ['step1','step2','step3'].forEach(s =>
+        document.getElementById(s).classList.add('d-none'));
+      document.getElementById('step' + step).classList.remove('d-none');
+
+      for (let i = 1; i <= 3; i++) {
+        const dot = document.getElementById('step' + i + '-dot');
+        if (i < step) {
+          dot.className = 'step done';
+          dot.innerHTML = '<i class="fas fa-check"></i>';
+        } else if (i === step) {
+          dot.className = 'step active';
+          dot.textContent = i;
+        } else {
+          dot.className = 'step inactive';
+          dot.textContent = i;
+        }
+      }
+    }
+
+    function toggleReg(inputId, iconId) {
+      const input = document.getElementById(inputId);
+      const icon  = document.getElementById(iconId);
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'fas fa-eye-slash';
+      } else {
+        input.type = 'password';
+        icon.className = 'fas fa-eye';
+      }
+    }
+
+    function checkPasswordMatch() {
+      const pw    = document.getElementById('regPassword').value;
+      const cpw   = document.getElementById('regConfirmPassword').value;
+      const status = document.getElementById('passwordMatchStatus');
+      const btn    = document.getElementById('submitBtn');
+
+      status.classList.remove('d-none');
+
+      if (pw.length < 6) {
+        status.innerHTML = '<span class="text-danger"><i class="fas fa-times-circle me-1"></i>รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร</span>';
+        btn.disabled = true;
+      } else if (cpw.length > 0 && pw === cpw) {
+        status.innerHTML = '<span class="text-success"><i class="fas fa-check-circle me-1"></i>รหัสผ่านตรงกัน</span>';
+        btn.disabled = false;
+      } else if (cpw.length > 0 && pw !== cpw) {
+        status.innerHTML = '<span class="text-danger"><i class="fas fa-times-circle me-1"></i>รหัสผ่านไม่ตรงกัน</span>';
+        btn.disabled = true;
+      } else {
+        status.classList.add('d-none');
+        btn.disabled = true;
+      }
+    }
+  </script>
+</body>
+</html>

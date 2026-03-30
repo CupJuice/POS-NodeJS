@@ -1,0 +1,112 @@
+<%- include('../partials/header') %>
+<div class="container-fluid py-4">
+  <%- include('../partials/flash') %>
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold text-primary"><i class="fas fa-users me-2"></i>จัดการสมาชิก</h2>
+    <a href="/members/new" class="btn btn-primary"><i class="fas fa-user-plus me-2"></i>เพิ่มสมาชิก</a>
+  </div>
+
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <form method="GET" action="/members">
+        <div class="row g-3">
+          <div class="col-md-5">
+            <div class="input-group">
+              <span class="input-group-text"><i class="fas fa-search"></i></span>
+              <input type="text" name="search" class="form-control" placeholder="ค้นหา รหัส, ชื่อ, เบอร์โทร..." value="<%= search %>">
+            </div>
+          </div>
+          <div class="col-md-3">
+            <select name="level" class="form-select">
+              <option value="">ระดับทั้งหมด</option>
+              <% ['Bronze','Silver','Gold','Platinum'].forEach(l => { %>
+                <option value="<%= l %>" <%= levelFilter === l ? 'selected' : '' %>><%= l %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <select name="status" class="form-select">
+              <option value="">สถานะทั้งหมด</option>
+              <option value="true" <%= statusFilter === 'true' ? 'selected' : '' %>>ใช้งาน</option>
+              <option value="false" <%= statusFilter === 'false' ? 'selected' : '' %>>ระงับ</option>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">ค้นหา</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-0 pt-3">
+      <h6 class="fw-bold mb-0">รายการสมาชิก (ทั้งหมด <%= total %> คน)</h6>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-primary">
+          <tr>
+            <th>รหัสสมาชิก</th><th>ชื่อ-นามสกุล</th><th>เบอร์โทร</th>
+            <th>แต้มสะสม</th><th>ยอดใช้จ่ายรวม</th><th>ระดับ</th><th>สถานะ</th><th>จัดการ</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% members.forEach(m => { %>
+            <tr>
+              <td><code><%= m.memberId %></code></td>
+              <td class="fw-semibold"><%= m.firstName %> <%= m.lastName %></td>
+              <td><%= m.phone %></td>
+              <td><i class="fas fa-star text-warning"></i> <%= m.points.toLocaleString() %></td>
+              <td>฿<%= m.totalSpent.toLocaleString('th-TH', {minimumFractionDigits:2}) %></td>
+              <td>
+                <span class="badge rounded-pill
+                  <%= m.level === 'Platinum' ? 'bg-dark' :
+                     m.level === 'Gold' ? 'bg-warning text-dark' :
+                     m.level === 'Silver' ? 'bg-secondary' : 'bg-danger' %>">
+                  <% if (m.level === 'Platinum') { %><i class="fas fa-crown me-1"></i><% } %>
+                  <%= m.level %>
+                </span>
+              </td>
+              <td><span class="badge <%= m.status ? 'bg-success' : 'bg-secondary' %>"><%= m.status ? 'ใช้งาน' : 'ระงับ' %></span></td>
+              <td>
+                <a href="/members/<%= m._id %>" class="btn btn-sm btn-outline-info me-1"><i class="fas fa-eye"></i></a>
+                <a href="/members/<%= m._id %>/edit" class="btn btn-sm btn-outline-warning me-1"><i class="fas fa-edit"></i></a>
+                <form action="/members/<%= m._id %>?_method=DELETE" method="POST" 
+                  class="d-inline delete-form" data-name="<%= m.firstName %>">
+                  <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+          <% if (members.length === 0) { %>
+            <tr><td colspan="8" class="text-center text-muted py-4"><i class="fas fa-search me-2"></i>ไม่พบสมาชิก</td></tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+    <div class="card-footer bg-white">
+      <nav>
+        <ul class="pagination justify-content-center mb-0">
+          <% for (let i = 1; i <= totalPages; i++) { %>
+            <li class="page-item <%= i === currentPage ? 'active' : '' %>">
+              <a class="page-link" href="?page=<%= i %>&search=<%= search %>&level=<%= levelFilter %>&status=<%= statusFilter %>"><%= i %></a>
+            </li>
+          <% } %>
+        </ul>
+      </nav>
+    </div>
+  </div>
+</div>
+<script>
+  document.querySelectorAll('.delete-form').forEach(form => {
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const name = this.dataset.name;
+      if (confirm('ยืนยันการลบสมาชิก ' + name + '?')) {
+        this.submit();
+      }
+    });
+  });
+</script>
+<%- include('../partials/footer') %>

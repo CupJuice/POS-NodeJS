@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+  <div class="container-fluid">
+    <a class="navbar-brand fw-bold" href="/">
+      <i class="fas fa-store me-2"></i>POS System
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto align-items-center">
+
+        <% const pos = currentUser ? currentUser.position : ''; %>
+        <% const canPOS     = ['แคชเชียร์','พนักงานขาย','ผู้จัดการ','ผู้ดูแลระบบ'].includes(pos); %>
+        <% const canCashier = ['แคชเชียร์','พนักงานขาย','ผู้จัดการ','ผู้ดูแลระบบ'].includes(pos); %>
+        <% const canManager = ['ผู้จัดการ','ผู้ดูแลระบบ'].includes(pos); %>
+
+        <% if (canPOS) { %>
+          <li class="nav-item">
+            <a class="nav-link" href="/sales/pos">
+              <i class="fas fa-cash-register me-1"></i>หน้าขาย
+            </a>
+          </li>
+        <% } %>
+
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+            <i class="fas fa-cog me-1"></i>จัดการ
+          </a>
+          <ul class="dropdown-menu">
+            <% if (canCashier) { %>
+              <li><a class="dropdown-item" href="/members">
+                <i class="fas fa-users me-2 text-primary"></i>สมาชิก</a></li>
+              <li><a class="dropdown-item" href="/products">
+                <i class="fas fa-box me-2 text-warning"></i>สินค้า</a></li>
+            <% } %>
+            <% if (canManager) { %>
+              <li><a class="dropdown-item" href="/employees">
+                <i class="fas fa-user-tie me-2 text-success"></i>พนักงาน</a></li>
+            <% } %>
+            <% if (canCashier) { %>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="/sales">
+                <i class="fas fa-receipt me-2 text-info"></i>รายการขาย</a></li>
+              <li><a class="dropdown-item" href="/payments">
+                <i class="fas fa-credit-card me-2 text-danger"></i>การชำระเงิน</a></li>
+            <% } %>
+          </ul>
+        </li>
+
+        <% if (canManager) { %>
+          <li class="nav-item">
+            <a class="nav-link" href="/reports">
+              <i class="fas fa-chart-bar me-1"></i>รายงาน
+            </a>
+          </li>
+        <% } %>
+
+        <!-- User Info & Logout -->
+        <% if (currentUser) { %>
+          <li class="nav-item dropdown ms-2">
+            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" data-bs-toggle="dropdown">
+              <div class="rounded-circle bg-white text-primary d-flex align-items-center justify-content-center me-2"
+                   style="width:32px;height:32px;font-weight:bold;font-size:0.9rem">
+                <%= currentUser.firstName.charAt(0).toUpperCase() %>
+              </div>
+              <span><%= currentUser.firstName %></span>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end shadow">
+              <li>
+                <div class="dropdown-item-text py-2">
+                  <p class="fw-bold mb-0"><%= currentUser.firstName %> <%= currentUser.lastName %></p>
+                  <small class="text-muted d-block">
+                    <i class="fas fa-briefcase me-1"></i><%= currentUser.position %>
+                  </small>
+                  <small class="text-muted">
+                    <i class="fas fa-id-badge me-1"></i><%= currentUser.employeeId %>
+                  </small>
+                </div>
+              </li>
+              <li><hr class="dropdown-divider my-1"></li>
+              <li>
+                <form action="/auth/logout" method="POST" class="m-0">
+                  <button type="submit" class="dropdown-item text-danger py-2">
+                    <i class="fas fa-sign-out-alt me-2"></i>ออกจากระบบ
+                  </button>
+                </form>
+              </li>
+            </ul>
+          </li>
+        <% } %>
+
+      </ul>
+    </div>
+  </div>
+</nav>

@@ -1,0 +1,620 @@
+<%- include('../partials/header') %>
+<style>
+.pos-screen { height: calc(100vh - 60px); overflow: hidden; }
+.cart-item:hover { background: #f8f9fa; }
+.product-card { cursor: pointer; transition: all 0.2s; }
+.product-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important; }
+.product-card.out-of-stock { opacity: 0.5; pointer-events: none; }
+#productList { height: calc(100vh - 200px); overflow-y: auto; }
+#cartItems { height: calc(100vh - 460px); overflow-y: auto; }
+@media print {
+  body * { visibility: hidden; }
+  #receiptModal, #receiptModal * { visibility: visible; }
+  #receiptModal { position: fixed; top: 0; left: 0; width: 100%; }
+  .modal-footer { display: none !important; }
+  .modal-header { display: none !important; }
+}
+</style>
+
+<div class="pos-screen bg-light">
+  <div class="row g-0 h-100">
+
+    <!-- Left: Products -->
+    <div class="col-md-7 border-end bg-white">
+      <div class="p-3 border-bottom">
+        <div class="row g-2">
+          <div class="col-md-6">
+            <div class="input-group">
+              <span class="input-group-text bg-primary text-white"><i class="fas fa-barcode"></i></span>
+              <input type="text" id="searchProduct" class="form-control" placeholder="ค้นหาหรือสแกนบาร์โค้ด...">
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div id="categoryBtns" class="d-flex gap-1 flex-wrap">
+              <button class="btn btn-sm btn-primary active" data-category="" onclick="filterCategory(this.dataset.category)">ทั้งหมด</button>
+                <% categories.forEach(c => { %>
+                  <button class="btn btn-sm btn-outline-secondary" data-category="<%= c %>" onclick="filterCategory(this.dataset.category)"><%= c %></button>
+                <% }) %>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="productList" class="p-2">
+        <div id="productsGrid" class="row g-2"></div>
+      </div>
+    </div>
+
+    <!-- Right: Cart -->
+    <div class="col-md-5 bg-white d-flex flex-column">
+
+      <!-- Employee & Member -->
+      <div class="p-3 border-bottom bg-light">
+        <div class="row g-2">
+          <div class="col-6">
+            <select id="employeeSelect" class="form-select form-select-sm">
+              <option value="">-- เลือกพนักงาน --</option>
+              <% employees.forEach(e => { %>
+                <option value="<%= e._id %>"><%= e.firstName %> (<%= e.position %>)</option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="col-6">
+            <div class="input-group input-group-sm">
+              <input type="text" id="memberPhone" class="form-control" placeholder="เบอร์สมาชิก...">
+              <button class="btn btn-outline-info" onclick="lookupMember()"><i class="fas fa-user-check"></i></button>
+            </div>
+            <small id="memberInfo" class="text-success d-none">
+              <i class="fas fa-check me-1"></i><span></span>
+            </small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cart Items -->
+      <div class="flex-grow-1">
+        <div class="p-2 border-bottom d-flex justify-content-between align-items-center">
+          <h6 class="fw-bold mb-0"><i class="fas fa-shopping-cart me-2 text-primary"></i>รายการสั่งซื้อ</h6>
+          <button class="btn btn-sm btn-outline-danger" onclick="clearCart()"><i class="fas fa-trash me-1"></i>ล้าง</button>
+        </div>
+        <div id="cartItems" class="p-2">
+          <div id="emptyCart" class="text-center text-muted py-5">
+            <i class="fas fa-shopping-cart fa-3x mb-3 d-block opacity-25"></i>
+            ยังไม่มีสินค้าในตะกร้า
+          </div>
+          <div id="cartList"></div>
+        </div>
+      </div>
+
+      <!-- Totals & Payment -->
+      <div class="border-top p-3">
+        <div class="mb-2">
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <label class="form-label small mb-1">ส่วนลด (%)</label>
+              <input type="number" id="discountPct" class="form-control form-control-sm" min="0" max="100" value="0" oninput="updateTotals()">
+            </div>
+            <div class="col-6">
+              <label class="form-label small mb-1">ส่วนลด (บาท)</label>
+              <input type="number" id="discountAmt" class="form-control form-control-sm" min="0" value="0" oninput="updateTotals()">
+            </div>
+          </div>
+        </div>
+        <div class="bg-light rounded p-2 mb-2">
+          <div class="d-flex justify-content-between mb-1">
+            <span class="text-muted small">ยอดรวม</span>
+            <span id="subtotalDisp">฿0.00</span>
+          </div>
+          <div class="d-flex justify-content-between mb-1">
+            <span class="text-muted small">ส่วนลด</span>
+            <span id="discountDisp" class="text-danger">-฿0.00</span>
+          </div>
+          <div class="d-flex justify-content-between mb-1">
+            <span class="text-muted small">ภาษี 7%</span>
+            <span id="taxDisp">฿0.00</span>
+          </div>
+          <div class="d-flex justify-content-between fw-bold fs-5 border-top pt-1">
+            <span>ยอดสุทธิ</span>
+            <span id="totalDisp" class="text-primary">฿0.00</span>
+          </div>
+        </div>
+        <button class="btn btn-primary w-100 btn-lg fw-bold" onclick="openPaymentModal()">
+          <i class="fas fa-credit-card me-2"></i>ชำระเงิน
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Payment Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1" data-bs-backdrop="static">
+  <div class="modal-dialog modal-md">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title"><i class="fas fa-credit-card me-2"></i>ชำระเงิน</h5>
+        <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-primary">
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="fw-bold fs-5">ยอดที่ต้องชำระ</span>
+            <span class="fw-bold fs-3" id="payAmount">฿0.00</span>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">วิธีชำระเงิน</label>
+          <div class="row g-2">
+            <div class="col-6">
+              <button type="button" class="btn btn-outline-success w-100 payment-btn" data-method="cash">
+                <i class="fas fa-money-bill-wave me-2"></i>เงินสด
+              </button>
+            </div>
+            <div class="col-6">
+              <button type="button" class="btn btn-outline-primary w-100 payment-btn" data-method="credit_card">
+                <i class="fas fa-credit-card me-2"></i>บัตรเครดิต
+              </button>
+            </div>
+            <div class="col-6">
+              <button type="button" class="btn btn-outline-info w-100 payment-btn" data-method="debit_card">
+                <i class="fas fa-credit-card me-2"></i>บัตรเดบิต
+              </button>
+            </div>
+            <div class="col-6">
+              <button type="button" class="btn btn-outline-warning w-100 payment-btn" data-method="qr_promptpay">
+                <i class="fas fa-qrcode me-2"></i>QR พร้อมเพย์
+              </button>
+            </div>
+          </div>
+        </div>
+        <div id="cashInput" class="d-none mb-3">
+          <label class="form-label fw-semibold">รับเงิน</label>
+          <input type="number" id="cashReceived" class="form-control form-control-lg text-end" placeholder="0.00" oninput="calcChange()">
+          <div class="mt-2 d-flex justify-content-between fw-bold text-success">
+            <span>เงินทอน</span>
+            <span id="changeDisplay">฿0.00</span>
+          </div>
+        </div>
+        <div id="qrInput" class="d-none mb-3 text-center">
+          <p class="fw-semibold mb-2">สแกน QR Code เพื่อชำระเงิน</p>
+          <div id="qrCodeContainer" class="d-flex justify-content-center mb-2"></div>
+          <p class="text-muted small">กรุณาสแกน QR Code แล้วกดยืนยันชำระเงิน</p>
+        </div>
+        <div id="selectedMethod" class="alert alert-info d-none">
+          <i class="fas fa-check-circle me-2"></i>
+          <span id="selectedMethodText"></span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+        <button type="button" class="btn btn-primary px-4" onclick="processPayment()">
+          <i class="fas fa-check me-2"></i>ยืนยันชำระเงิน
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Receipt Modal -->
+<div class="modal fade" id="receiptModal" tabindex="-1" data-bs-backdrop="static">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title"><i class="fas fa-receipt me-2"></i>ใบเสร็จรับเงิน</h5>
+      </div>
+      <div class="modal-body text-center" id="receiptContent"></div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary" onclick="window.print()"><i class="fas fa-print me-2"></i>พิมพ์</button>
+        <button class="btn btn-success" onclick="newSale()"><i class="fas fa-plus me-2"></i>ขายใหม่</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let cart = [];
+let selectedPaymentMethod = null;
+let foundMember = null;
+let allProducts = [];
+
+// Load products
+async function loadProducts() {
+  try {
+    const res = await fetch('/products/search?q=%20');
+    allProducts = await res.json();
+    renderProducts(allProducts);
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+function renderProducts(products) {
+  const grid = document.getElementById('productsGrid');
+  if (!products.length) {
+    grid.innerHTML = '<div class="col-12 text-center text-muted py-5"><i class="fas fa-search fa-2x mb-2 d-block"></i>ไม่พบสินค้า</div>';
+    return;
+  }
+  grid.innerHTML = products.map(p => `
+    <div class="col-6 col-lg-4">
+      <div class="card border-0 shadow-sm product-card ${p.stock === 0 ? 'out-of-stock' : ''}"
+            data-id="${p._id}"
+            data-name="${p.name.replace(/"/g, '&quot;')}"
+            data-price="${p.sellPrice}"
+            data-stock="${p.stock}"
+            onclick="addToCart(this.dataset.id, this.dataset.name, parseFloat(this.dataset.price), parseInt(this.dataset.stock))">
+        <div class="card-body p-2 text-center">
+
+          <!-- ✅ แสดงรูปสินค้า ถ้าไม่มีรูปแสดง icon เหมือนเดิม -->
+          <div class="rounded mb-1 overflow-hidden d-flex align-items-center justify-content-center bg-light" style="height:120px">
+            ${p.image
+              ? `<img src="${p.image}" style="width:100%;height:120px;object-fit:cover">`
+              : `<i class="fas fa-box fa-2x text-warning opacity-50"></i>`
+            }
+          </div>
+
+          <p class="mb-0 small fw-semibold text-truncate">${p.name}</p>
+          <p class="mb-0 fw-bold text-primary small">฿${p.sellPrice.toLocaleString()}</p>
+          <span class="badge ${p.stock <= 5 ? 'bg-warning text-dark' : 'bg-light text-muted'} small">เหลือ ${p.stock}</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterCategory(cat) {
+  document.querySelectorAll('#categoryBtns .btn').forEach(b => {
+    b.classList.remove('active', 'btn-primary');
+    b.classList.add('btn-outline-secondary');
+  });
+  event.target.classList.remove('btn-outline-secondary');
+  event.target.classList.add('active', 'btn-primary');
+  renderProducts(cat ? allProducts.filter(p => p.category === cat) : allProducts);
+}
+
+function addToCart(id, name, price, stock) {
+  const existing = cart.find(i => i.id === id);
+  if (existing) {
+    if (existing.qty >= stock) { alert('สต็อกไม่พอ'); return; }
+    existing.qty++;
+  } else {
+    cart.push({ id, name, price, stock, qty: 1 });
+  }
+  renderCart();
+  updateTotals();
+}
+
+function removeFromCart(id) {
+  cart = cart.filter(i => i.id !== id);
+  renderCart();
+  updateTotals();
+}
+
+function updateQty(id, qty) {
+  const item = cart.find(i => i.id === id);
+  if (item) {
+    if (qty <= 0) { removeFromCart(id); return; }
+    if (qty > item.stock) { alert('สต็อกไม่พอ'); return; }
+    item.qty = parseInt(qty);
+  }
+  renderCart();
+  updateTotals();
+}
+
+function clearCart() {
+  cart = [];
+  foundMember = null;
+  document.getElementById('memberPhone').value = '';
+  document.getElementById('memberInfo').classList.add('d-none');
+  renderCart();
+  updateTotals();
+}
+
+function renderCart() {
+  const empty = document.getElementById('emptyCart');
+  const list = document.getElementById('cartList');
+  if (cart.length === 0) {
+    empty.classList.remove('d-none');
+    list.innerHTML = '';
+    return;
+  }
+  empty.classList.add('d-none');
+  list.innerHTML = cart.map(item => `
+    <div class="cart-item d-flex align-items-center border-bottom py-2 px-1">
+      <div class="flex-grow-1">
+        <div class="fw-semibold small">${item.name}</div>
+        <div class="text-primary small">฿${item.price.toLocaleString()} × ${item.qty}</div>
+      </div>
+      <div class="d-flex align-items-center gap-1">
+        <button class="btn btn-outline-secondary btn-sm" onclick="updateQty('${item.id}', ${item.qty - 1})"
+          style="width:28px;height:28px;padding:0">-</button>
+        <input type="number" value="${item.qty}" min="1" max="${item.stock}"
+          class="form-control form-control-sm text-center" style="width:50px"
+          onchange="updateQty('${item.id}', this.value)">
+        <button class="btn btn-outline-secondary btn-sm" onclick="updateQty('${item.id}', ${item.qty + 1})"
+          style="width:28px;height:28px;padding:0">+</button>
+        <button class="btn btn-outline-danger btn-sm ms-1" onclick="removeFromCart('${item.id}')"
+          style="width:28px;height:28px;padding:0"><i class="fas fa-times"></i></button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function updateTotals() {
+  const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  const discPct = parseFloat(document.getElementById('discountPct').value) || 0;
+  const discAmt = parseFloat(document.getElementById('discountAmt').value) || 0;
+  const discount = Math.max(discAmt, subtotal * discPct / 100);
+  const after = Math.max(0, subtotal - discount);
+  const tax = after * 7 / 100;
+  const total = after + tax;
+
+  document.getElementById('subtotalDisp').textContent = '฿' + subtotal.toLocaleString('th-TH', {minimumFractionDigits:2});
+  document.getElementById('discountDisp').textContent = '-฿' + discount.toLocaleString('th-TH', {minimumFractionDigits:2});
+  document.getElementById('taxDisp').textContent = '฿' + tax.toLocaleString('th-TH', {minimumFractionDigits:2});
+  document.getElementById('totalDisp').textContent = '฿' + total.toLocaleString('th-TH', {minimumFractionDigits:2});
+  document.getElementById('payAmount').textContent = '฿' + total.toLocaleString('th-TH', {minimumFractionDigits:2});
+}
+
+async function lookupMember() {
+  const phone = document.getElementById('memberPhone').value;
+  if (!phone) return;
+  try {
+    const res = await fetch(`/members/search?phone=${phone}`);
+    const info = document.getElementById('memberInfo');
+    const span = info.querySelector('span');
+    if (res.ok) {
+      foundMember = await res.json();
+      span.textContent = foundMember.firstName + ' ' + foundMember.lastName + ' (แต้ม: ' + foundMember.points + ')';
+      info.classList.remove('d-none');
+    } else {
+      foundMember = null;
+      span.textContent = 'ไม่พบสมาชิก';
+      info.classList.remove('d-none');
+      info.classList.replace('text-success', 'text-danger');
+    }
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+function generateQR() {
+  const total = parseFloat(
+    document.getElementById('totalDisp').textContent.replace(/[฿,]/g, '')
+  );
+  const container = document.getElementById('qrCodeContainer');
+  const phone = '0623485941';
+  const payload = generatePromptPayPayload(phone, total);
+
+  container.innerHTML = `
+    <div class="text-center">
+      <img
+        src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(payload)}&format=png&ecc=M"
+        width="220" height="220"
+        class="border rounded p-2 bg-white"
+        alt="QR Code"
+      >
+      <div class="mt-2 small text-muted">
+        ยอดชำระ <strong class="text-primary">฿${total.toLocaleString('th-TH', {minimumFractionDigits:2})}</strong>
+      </div>
+    </div>
+  `;
+}
+
+function generatePromptPayPayload(phone, amount) {
+  // แปลงเบอร์โทรให้เป็นรูปแบบ +66
+  const normalized = phone.replace(/^0/, '66');
+
+  function tlv(tag, value) {
+    const len = String(value.length).padStart(2, '0');
+    return tag + len + value;
+  }
+
+  function crc16(str) {
+    let crc = 0xFFFF;
+    for (let i = 0; i < str.length; i++) {
+      crc ^= str.charCodeAt(i) << 8;
+      for (let j = 0; j < 8; j++) {
+        crc = (crc & 0x8000) ? (crc << 1) ^ 0x1021 : crc << 1;
+      }
+    }
+    return ((crc & 0xFFFF).toString(16).toUpperCase()).padStart(4, '0');
+  }
+
+  const guid = tlv('00', 'A000000677010111');
+  const phoneTag = tlv('01', '+' + normalized);
+  const merchantInfo = tlv('29', guid + phoneTag);
+
+  const amountStr = amount.toFixed(2);
+  const payload =
+    tlv('00', '01') +           // Payload Format Indicator
+    tlv('01', '12') +           // Point of Initiation (12 = dynamic)
+    merchantInfo +              // Merchant Account Info
+    tlv('53', '764') +          // Transaction Currency (764 = THB)
+    tlv('54', amountStr) +      // Transaction Amount
+    tlv('58', 'TH') +           // Country Code
+    '6304';                     // CRC placeholder
+
+  return payload + crc16(payload);
+}
+
+
+
+function openPaymentModal() {
+  if (cart.length === 0) { alert('กรุณาเลือกสินค้า'); return; }
+  if (!document.getElementById('employeeSelect').value) { alert('กรุณาเลือกพนักงาน'); return; }
+  document.getElementById('cashInput').classList.add('d-none');
+  document.getElementById('qrInput').classList.add('d-none');
+  document.getElementById('selectedMethod').classList.add('d-none');
+  document.querySelectorAll('.payment-btn').forEach(b => b.classList.remove('active'));
+  new bootstrap.Modal(document.getElementById('paymentModal')).show();
+}
+
+document.querySelectorAll('.payment-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.payment-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    selectedPaymentMethod = this.dataset.method;
+    document.getElementById('cashInput').classList.add('d-none');
+    document.getElementById('qrInput').classList.add('d-none');
+    document.getElementById('selectedMethod').classList.add('d-none');
+
+    if (selectedPaymentMethod === 'cash') {
+      document.getElementById('cashInput').classList.remove('d-none');
+      document.getElementById('cashReceived').focus();
+    } else if (selectedPaymentMethod === 'qr_promptpay') {
+      document.getElementById('qrInput').classList.remove('d-none');
+      generateQR();
+    } else {
+      document.getElementById('selectedMethod').classList.remove('d-none');
+      document.getElementById('selectedMethodText').textContent = this.textContent.trim();
+    }
+  });
+});
+
+function calcChange() {
+  const total = parseFloat(document.getElementById('totalDisp').textContent.replace(/[฿,]/g, '')) || 0;
+  const received = parseFloat(document.getElementById('cashReceived').value) || 0;
+  const change = Math.max(0, received - total);
+  document.getElementById('changeDisplay').textContent = '฿' + change.toLocaleString('th-TH', {minimumFractionDigits:2});
+}
+
+async function processPayment() {
+  if (!selectedPaymentMethod) { alert('กรุณาเลือกวิธีชำระเงิน'); return; }
+  const total = parseFloat(document.getElementById('totalDisp').textContent.replace(/[฿,]/g, '')) || 0;
+
+  // เช็คเงินสดต้องกรอกจำนวน
+  if (selectedPaymentMethod === 'cash') {
+    const cashVal = document.getElementById('cashReceived').value;
+    if (!cashVal || cashVal.trim() === '' || parseFloat(cashVal) <= 0) {
+      alert('กรุณากรอกจำนวนเงินที่รับมา'); return;
+    }
+    if (parseFloat(cashVal) < total) {
+      alert('รับเงินไม่พอ'); return;
+    }
+  }
+
+  const cashReceived = parseFloat(document.getElementById('cashReceived').value) || total;
+  const employeeId = document.getElementById('employeeSelect').value;
+  const discPct = parseFloat(document.getElementById('discountPct').value) || 0;
+  const discAmt = parseFloat(document.getElementById('discountAmt').value) || 0;
+
+  try {
+    const saleRes = await fetch('/sales', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        employeeId,
+        memberId: foundMember ? foundMember._id : '',
+        items: JSON.stringify(cart.map(i => ({productId: i.id, quantity: i.qty}))),
+        discountPercent: discPct,
+        discountAmount: discAmt,
+        taxRate: 7
+      })
+    });
+    const saleData = await saleRes.json();
+    if (!saleData.success) throw new Error(saleData.error);
+
+    const payRes = await fetch('/payments', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        saleId: saleData.saleId,
+        paymentMethods: JSON.stringify([{ method: selectedPaymentMethod, amount: total }]),
+        cashReceived: selectedPaymentMethod === 'cash' ? cashReceived : total
+      })
+    });
+    const payData = await payRes.json();
+    if (!payData.success) throw new Error(payData.error);
+
+    bootstrap.Modal.getInstance(document.getElementById('paymentModal')).hide();
+    showReceipt(saleData, payData, cashReceived, selectedPaymentMethod);
+  } catch(e) {
+    alert('เกิดข้อผิดพลาด: ' + e.message);
+  }
+}
+
+function showReceipt(saleData, payData, cashReceived, method) {
+  const now = new Date().toLocaleString('th-TH');
+  const total = saleData.totalAmount;
+  const change = payData.changeAmount;
+  const methodName = {
+    cash: 'เงินสด',
+    credit_card: 'บัตรเครดิต',
+    debit_card: 'บัตรเดบิต',
+    qr_promptpay: 'QR พร้อมเพย์'
+  }[method];
+
+  document.getElementById('receiptContent').innerHTML = `
+    <div class="text-center mb-3">
+      <img src="/images/logo/logo1.png" style="height:60px;width:60px;object-fit:contain;border-radius:8px;margin-bottom:8px;" class="d-block mx-auto"><br>
+      <h4 class="fw-bold">POS System</h4>
+      <p class="text-muted small mb-0">${now}</p>
+      <p class="text-muted small">เลขที่: ${saleData.saleNumber}</p>
+    </div>
+    <div class="table-responsive mb-3">
+      <table class="table table-sm">
+        <thead><tr><th>สินค้า</th><th class="text-end">จำนวน</th><th class="text-end">ราคา</th></tr></thead>
+        <tbody>
+          ${cart.map(i => `
+            <tr>
+              <td>${i.name}</td>
+              <td class="text-end">${i.qty}</td>
+              <td class="text-end">฿${(i.price * i.qty).toLocaleString()}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div class="border-top pt-2">
+      <div class="d-flex justify-content-between">
+        <span>ยอดสุทธิ</span>
+        <span class="fw-bold fs-5 text-primary">฿${total.toLocaleString('th-TH', {minimumFractionDigits:2})}</span>
+      </div>
+      <div class="d-flex justify-content-between text-muted small">
+        <span>วิธีชำระ</span><span>${methodName}</span>
+      </div>
+      ${method === 'cash' ? `
+        <div class="d-flex justify-content-between text-muted small">
+          <span>รับเงิน</span><span>฿${cashReceived.toLocaleString()}</span>
+        </div>
+        <div class="d-flex justify-content-between fw-bold text-success">
+          <span>เงินทอน</span><span>฿${change.toLocaleString('th-TH', {minimumFractionDigits:2})}</span>
+        </div>
+      ` : ''}
+      ${payData.pointsEarned > 0 ? `
+        <div class="alert alert-warning mt-2 py-1 small mb-0">
+          ⭐ ได้รับแต้มสะสม ${payData.pointsEarned} แต้ม
+        </div>
+      ` : ''}
+    </div>
+  `;
+  new bootstrap.Modal(document.getElementById('receiptModal')).show();
+}
+
+function newSale() {
+  bootstrap.Modal.getInstance(document.getElementById('receiptModal')).hide();
+  clearCart();
+  loadProducts();
+}
+
+// Search
+let searchTimeout;
+document.getElementById('searchProduct').addEventListener('input', function() {
+  clearTimeout(searchTimeout);
+  const q = this.value;
+  searchTimeout = setTimeout(async () => {
+    if (q.trim() === '') {
+      renderProducts(allProducts);
+      return;
+    }
+    try {
+      const res = await fetch(`/products/search?q=${encodeURIComponent(q)}`);
+      const products = await res.json();
+      renderProducts(products);
+    } catch(e) { console.error(e); }
+  }, 300);
+});
+
+// Initial load
+loadProducts();
+</script>
+
+<%- include('../partials/footer') %>

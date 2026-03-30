@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>เข้าสู่ระบบ - POS System</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #0d6efd 0%, #0dcaf0 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .login-card {
+      width: 100%;
+      max-width: 420px;
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .form-control:focus {
+      border-color: #0d6efd;
+      box-shadow: 0 0 0 0.2rem rgba(13,110,253,0.15);
+    }
+    .btn-login {
+      background: linear-gradient(135deg, #0d6efd, #0dcaf0);
+      border: none;
+      transition: opacity 0.2s;
+    }
+    .btn-login:hover { opacity: 0.9; }
+  </style>
+</head>
+<body>
+  <div class="login-card card border-0 shadow-lg">
+    <div class="card-header bg-primary text-white text-center py-4">
+      <img src="/images/logo/logo1.png" alt="POS System" style="height:80px;width:80px;object-fit:contain;border-radius:12px;background:white;padding:6px;margin-bottom:10px;">
+      <h4 class="fw-bold mb-0">POS System</h4>
+      <p class="mb-0 opacity-75 small">ระบบจัดการร้านค้า</p>
+    </div>
+    <div class="card-body p-4">
+
+      <% if (error_msg && error_msg.length > 0) { %>
+        <div class="alert alert-danger py-2">
+          <i class="fas fa-exclamation-circle me-2"></i><%= error_msg %>
+        </div>
+      <% } %>
+      <% if (success_msg && success_msg.length > 0) { %>
+        <div class="alert alert-success py-2">
+          <i class="fas fa-check-circle me-2"></i><%= success_msg %>
+        </div>
+      <% } %>
+
+      <form action="/auth/login" method="POST">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">อีเมล</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="fas fa-envelope text-muted"></i></span>
+            <input type="email" name="email" class="form-control form-control-lg"
+              placeholder="email@example.com" required autocomplete="email">
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label fw-semibold">รหัสผ่าน</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="fas fa-lock text-muted"></i></span>
+            <input type="password" name="password" id="passwordInput"
+              class="form-control form-control-lg" placeholder="••••••••" required>
+            <button type="button" class="btn btn-outline-secondary" onclick="togglePassword()">
+              <i class="fas fa-eye" id="eyeIcon"></i>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-login btn-primary w-100 btn-lg fw-bold text-white">
+          <i class="fas fa-sign-in-alt me-2"></i>เข้าสู่ระบบ
+        </button>
+      </form>
+
+      <hr>
+      <p class="text-center text-muted mb-0 small">
+        ยังไม่มีบัญชี?
+        <a href="/auth/register" class="text-primary fw-semibold">
+          <i class="fas fa-user-plus me-1"></i>สมัครบัญชีพนักงาน
+        </a>
+      </p>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+  <script>
+    function togglePassword() {
+      const input = document.getElementById('passwordInput');
+      const icon = document.getElementById('eyeIcon');
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'fas fa-eye-slash';
+      } else {
+        input.type = 'password';
+        icon.className = 'fas fa-eye';
+      }
+    }
+  </script>
+</body>
+</html>
